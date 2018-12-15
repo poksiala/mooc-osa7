@@ -9,13 +9,16 @@ import LoginForm from './components/LoginForm'
 import BlogForm from './components/BlogForm'
 import { notify } from './reducers/notifications'
 import { showError } from './reducers/errors'
+import {
+  voteBlog, initializeBlogs,
+  createBlog, deleteBlog
+} from './reducers/blogs'
 import { connect } from 'react-redux'
 
 class App extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      blogs: [],
       name: null,
       user: null,
       username: '',
@@ -37,10 +40,7 @@ class App extends React.Component {
       blogService.setToken(user.token)
     }
 
-    blogService.getAll().then(blogs => {
-      blogs.sort(blogSort)
-      this.setState({ blogs })
-    })
+    this.props.initializeBlogs()
   }
 
   handleFieldChange = (event) => {
@@ -87,62 +87,21 @@ class App extends React.Component {
     this.blogForm.toggleVisibility()
     const { title, author, url } = this.state
     try {
-      const newBlog = await blogService
-        .create({
-          title,
-          author,
-          url
-        })
-
+      await this.props.createBlog({
+        title,
+        author,
+        url
+      })
       this.setState({
-        blogs: this.state.blogs.concat(newBlog),
         title: '',
         author: '',
         url: ''
       })
-      this.props.notify(`a new blog '${newBlog.title}' added.`, 3)
+      this.props.notify(`a new blog '${title}' added.`, 3)
     } catch (exception) {
       this.props.setError('Error. See console for details :)', 3)
       console.error(exception)
     }
-  }
-
-  addLike = (blog) => {
-    return(
-      async () => {
-        const { user, likes, author, title, url } = blog
-        const blogData = {
-          user: user._id,
-          likes: likes + 1,
-          author,
-          title,
-          url,
-        }
-        const updatedBlog = await blogService.update(blog.id, blogData)
-        const blogs = this.state.blogs.map((b) => {
-          return (b.id === updatedBlog.id) ? updatedBlog : b
-        }).sort(blogSort)
-        this.setState({ blogs })
-        this.props.notify('Liked!', 3)
-      }
-    )
-  }
-
-  deleteBlog = (blog) => {
-    return (
-      async () => {
-        const id = blog.id
-        try {
-          await blogService.remove(id)
-          const blogs = this.state.blogs.filter(b => b.id !== id)
-          this.setState({ blogs })
-          this.props.notify(`blog '${blog.title}' removed.`, 3)
-        } catch (exception) {
-          console.error(exception)
-          this.props.showError('Could not remove blogpost', 3)
-        }
-      }
-    )
   }
 
   render() {
@@ -171,12 +130,10 @@ class App extends React.Component {
         <p>
           {this.state.user.name} logged in. <button onClick={this.logout}>logout</button>
         </p>
-        {this.state.blogs.map(blog =>
+        {this.props.blogs.map(blog =>
           <Blog
             key={blog.id}
             blog={blog}
-            handleLike={this.addLike}
-            handleDelete={this.deleteBlog}
             user={this.state.user}
           />
         )}
@@ -198,7 +155,20 @@ class App extends React.Component {
 
 const blogSort = (a, b) => b.likes - a.likes
 
+const mapStatetoProps = (state) => {
+  return {
+    blogs: state.blogs.sort(blogSort)
+  }
+}
+
 export default connect(
-  null,
-  { notify, showError }
+  mapStatetoProps,
+  {
+    notify,
+    showError,
+    initializeBlogs,
+    voteBlog,
+    createBlog,
+    deleteBlog
+  }
 )(App)
