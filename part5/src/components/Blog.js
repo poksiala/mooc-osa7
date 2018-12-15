@@ -1,12 +1,14 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import { deleteBlog, voteBlog } from './../reducers/blogs'
+import { deleteBlog, voteBlog, commentBlog } from './../reducers/blogs'
 import { notify } from './../reducers/notifications'
 import { showError } from './../reducers/errors'
 import { Header, Label } from 'semantic-ui-react'
 import LoaderGif from './LoaderGif'
 
 const Url = ({ url }) => <a href={url}>{url}</a>
+
+const Comment = ({ content }) => <div>{content}</div>
 
 class Blog extends React.Component {
 
@@ -35,13 +37,39 @@ class Blog extends React.Component {
     }
   }
 
+  addComment = async (event) => {
+    event.preventDefault()
+    const content = event.target.content.value
+    event.target.content.value = ''
+    const { commentBlog, notify, showError, blog } = this.props
+    const id = blog.id
+    try {
+      await commentBlog(id, content)
+      notify('Comment added!', 3)
+    } catch (exception) {
+      console.error(exception)
+      showError('Error!')
+    }
+  }
+
   render() {
     const { blog } = this.props
-
     if (blog === undefined) return(<LoaderGif />)
+    const comments = blog.comments.map(c => <Comment key={c} content={c} />)
     return(
       <div>
-        <Header as='h3'>{blog.title}</Header>
+        <Header as='h3'>{blog.title} by {blog.author}</Header>
+        <div>Comments:</div>
+        {comments}
+        <form onSubmit={this.addComment}>
+          <div>
+          comment:
+            <input
+              name="content"
+            />
+          </div>
+          <button type="submit">Save</button>
+        </form>
         <div><Url url={blog.url} /></div>
         {this.props.user && (!blog.user || blog.user._id === this.props.user.id) &&
           <div><button onClick={this.delete()}>delete</button></div>
@@ -62,6 +90,7 @@ export default connect(
     deleteBlog,
     voteBlog,
     notify,
-    showError
+    showError,
+    commentBlog
   }
 )(Blog)

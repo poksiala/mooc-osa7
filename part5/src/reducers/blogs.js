@@ -64,4 +64,14 @@ export const deleteBlog = (id) => {
   }
 }
 
+export const commentBlog = (id, content) => {
+  return async (dispatch) => {
+    const updatedBlog = await blogService.comment(id, content)
+    dispatch({
+      type: 'UPDATE_BLOG',
+      data: updatedBlog
+    })
+  }
+}
+
 export default blogReducer
