@@ -1,22 +1,14 @@
 import React from 'react'
-import { HideableDiv } from './Togglable'
 import { connect } from 'react-redux'
 import { deleteBlog, voteBlog } from './../reducers/blogs'
 import { notify } from './../reducers/notifications'
 import { showError } from './../reducers/errors'
+import { Header, Label } from 'semantic-ui-react'
+import LoaderGif from './LoaderGif'
 
 const Url = ({ url }) => <a href={url}>{url}</a>
 
 class Blog extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      visible: false
-    }
-  }
-  toggleVisibility = () => {
-    this.setState({ visible: !this.state.visible })
-  }
 
   like = () => {
     return(
@@ -45,22 +37,20 @@ class Blog extends React.Component {
 
   render() {
     const { blog } = this.props
+
+    if (blog === undefined) return(<LoaderGif />)
     return(
-      <div className="blog-container">
-        <div className="title-author" onClick={this.toggleVisibility}>
-          {blog.title} by {blog.author}
-        </div>
-        <HideableDiv
-          className="hideable"
-          visible={this.state.visible}
-        >
-          <div><Url url={blog.url} /></div>
-          <div>{blog.likes} <button onClick={this.like()}>like</button></div>
-          {blog.user && <div>added by {blog.user.name}</div>}
-          {this.props.user && (!blog.user || blog.user._id === this.props.user.id) &&
-            <div><button onClick={this.delete()}>delete</button></div>
-          }
-        </HideableDiv>
+      <div>
+        <Header as='h3'>{blog.title}</Header>
+        <div><Url url={blog.url} /></div>
+        {this.props.user && (!blog.user || blog.user._id === this.props.user.id) &&
+          <div><button onClick={this.delete()}>delete</button></div>
+        }
+        <Label basic image>
+          <img src='https://react.semantic-ui.com/images/avatar/small/joe.jpg' />
+          {blog.user.name}
+        </Label>
+        <Label basic as='a' onClick={this.like()} content={blog.likes} icon='like' />
       </div>
     )
   }

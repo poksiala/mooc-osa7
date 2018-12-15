@@ -1,5 +1,4 @@
 import React from 'react'
-import Blog from './components/Blog'
 import blogService from './services/blogs'
 import loginService from './services/login'
 import Notification from './components/notification'
@@ -14,6 +13,37 @@ import {
   createBlog, deleteBlog
 } from './reducers/blogs'
 import { connect } from 'react-redux'
+import Blogs from './components/Blogs'
+import Blog from './components/Blog'
+import { initializeUsers } from './reducers/users'
+import {
+  Container, Grid
+} from 'semantic-ui-react'
+
+import {
+  BrowserRouter as Router,
+  Route, Redirect, Link
+} from 'react-router-dom'
+import Users from './components/Users'
+import User from './components/User'
+
+const Navigation = () => {
+  return (
+    <Grid columns={8}>
+      <Grid.Row>
+        <Grid.Column key={1}>
+          Navigation:
+        </Grid.Column>
+        <Grid.Column key={2}>
+          <Link to='/users'>Users</Link>
+        </Grid.Column>
+        <Grid.Column key={3}>
+          <Link to='/blogs'>Blogs</Link>
+        </Grid.Column>
+      </Grid.Row>
+    </Grid>
+  )
+}
 
 class App extends React.Component {
   constructor(props) {
@@ -41,6 +71,7 @@ class App extends React.Component {
     }
 
     this.props.initializeBlogs()
+    this.props.initializeUsers()
   }
 
   handleFieldChange = (event) => {
@@ -123,41 +154,48 @@ class App extends React.Component {
     }
 
     return (
-      <div>
-        <h2>blogs</h2>
-        <Notification />
-        <Error message={this.state.error} />
-        <p>
-          {this.state.user.name} logged in. <button onClick={this.logout}>logout</button>
-        </p>
-        {this.props.blogs.map(blog =>
-          <Blog
-            key={blog.id}
-            blog={blog}
-            user={this.state.user}
-          />
-        )}
-        <div>
-          <Togglable buttonLabel='add new' ref={component => this.blogForm = component}>
-            <BlogForm
-              handleSubmit={this.addBlog}
-              handleChange={this.handleFieldChange}
-              url={this.state.url}
-              author={this.state.author}
-              title={this.state.title}
-            />
-          </Togglable>
-        </div>
-      </div>
+      <Container>
+        <Router>
+          <div>
+            <h2>blogs</h2>
+            <Navigation />
+            <Notification />
+            <Error message={this.state.error} />
+            <p>
+              {this.state.user.name} logged in. <button onClick={this.logout}>logout</button>
+            </p>
+            <Route exact path='/' render={() => <Redirect to='/blogs' />} />
+            <Route exact path='/blogs' render={() => <Blogs />} />
+            <Route exact path='/blogs/:id' render={({ match }) =>
+              <Blog blog={this.props.blogs.find(b => b.id === match.params.id)} />
+            } />
+            <Route exact path='/users' render={() => <Users />} />
+            <Route exact path='/users/:id' render={({ match }) =>
+              <User user={this.props.users.find(u => u.id === match.params.id)} />
+            }/>
+            <div>
+              <Togglable buttonLabel='add new' ref={component => this.blogForm = component}>
+                <BlogForm
+                  handleSubmit={this.addBlog}
+                  handleChange={this.handleFieldChange}
+                  url={this.state.url}
+                  author={this.state.author}
+                  title={this.state.title}
+                />
+              </Togglable>
+            </div>
+          </div>
+        </Router>
+      </Container>
     )
   }
 }
 
-const blogSort = (a, b) => b.likes - a.likes
 
 const mapStatetoProps = (state) => {
   return {
-    blogs: state.blogs.sort(blogSort)
+    blogs: state.blogs,
+    users: state.users
   }
 }
 
@@ -169,6 +207,7 @@ export default connect(
     initializeBlogs,
     voteBlog,
     createBlog,
-    deleteBlog
+    deleteBlog,
+    initializeUsers
   }
 )(App)
