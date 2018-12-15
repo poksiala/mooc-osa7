@@ -26,6 +26,8 @@ import {
 } from 'react-router-dom'
 import Users from './components/Users'
 import User from './components/User'
+import { loginUser, logoutUser } from './reducers/login'
+
 
 const Navigation = () => {
   return (
@@ -49,8 +51,6 @@ class App extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      name: null,
-      user: null,
       username: '',
       password: '',
       title: '',
@@ -64,9 +64,7 @@ class App extends React.Component {
     const userJson = window.localStorage.getItem('blogsUser')
     if (userJson) {
       const user = JSON.parse(userJson)
-      this.setState({
-        user
-      })
+      this.props.loginUser(user)
       blogService.setToken(user.token)
     }
 
@@ -92,8 +90,8 @@ class App extends React.Component {
       this.setState({
         username: '',
         password: '',
-        user
       })
+      this.props.loginUser(user)
       this.props.notify('Succesfull login', 3)
 
 
@@ -108,7 +106,7 @@ class App extends React.Component {
   }
 
   logout = () => {
-    this.setState({ user: null })
+    this.props.logoutUser()
     window.localStorage.removeItem('blogsUser')
     this.props.notify('Logged out', 3)
   }
@@ -137,7 +135,7 @@ class App extends React.Component {
 
   render() {
 
-    if (this.state.user === null) {
+    if (this.props.user === null) {
       return (
         <div>
           <Notification />
@@ -162,7 +160,7 @@ class App extends React.Component {
             <Notification />
             <Error message={this.state.error} />
             <p>
-              {this.state.user.name} logged in. <button onClick={this.logout}>logout</button>
+              {this.props.user.name} logged in. <button onClick={this.logout}>logout</button>
             </p>
             <Route exact path='/' render={() => <Redirect to='/blogs' />} />
             <Route exact path='/blogs' render={() => <Blogs />} />
@@ -195,7 +193,8 @@ class App extends React.Component {
 const mapStatetoProps = (state) => {
   return {
     blogs: state.blogs,
-    users: state.users
+    users: state.users,
+    user: state.user
   }
 }
 
@@ -208,6 +207,8 @@ export default connect(
     voteBlog,
     createBlog,
     deleteBlog,
-    initializeUsers
+    initializeUsers,
+    loginUser,
+    logoutUser
   }
 )(App)

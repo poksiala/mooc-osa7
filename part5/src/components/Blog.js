@@ -5,6 +5,7 @@ import { notify } from './../reducers/notifications'
 import { showError } from './../reducers/errors'
 import { Header, Label } from 'semantic-ui-react'
 import LoaderGif from './LoaderGif'
+import { Redirect } from 'react-router-dom'
 
 const Url = ({ url }) => <a href={url}>{url}</a>
 
@@ -84,8 +85,14 @@ class Blog extends React.Component {
   }
 }
 
+const mapStateToProps = (state) => {
+  return {
+    user: state.user
+  }
+}
+
 export default connect(
-  null,
+  mapStateToProps,
   {
     deleteBlog,
     voteBlog,
