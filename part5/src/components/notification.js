@@ -1,21 +1,30 @@
 import React from 'react'
 import styled from 'styled-components'
+import { connect } from 'react-redux'
 
 const NotificationDiv = styled.div`
   background: green;
   padding: 10px;
 `
 
-const Notification = ({message}) => {
-  if (message === null) {
+const Notification = ({ notification }) => {
+  if (notification === null) {
     return null
   } else {
     return (
       <NotificationDiv>
-        {message}
+        {notification}
       </NotificationDiv>
     )
   }
 }
 
-export default Notification
+const mapStateToProps = state => {
+  return {
+    notification: state.notification
+  }
+}
+
+export default connect(
+  mapStateToProps
+)(Notification)

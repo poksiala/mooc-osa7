@@ -1,5 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
+import { connect } from 'react-redux'
 
 const ErrorDiv = styled.div`
   color: red;
@@ -13,16 +14,24 @@ const ErrorDiv = styled.div`
 
 
 
-const Error = ({message}) => {
-  if (message === null) {
+const Error = ({ err }) => {
+  if (err === null) {
     return null
   } else {
     return (
       <ErrorDiv>
-        {message}
+        {err}
       </ErrorDiv>
     )
   }
 }
 
-export default Error
+const mapStateToProps = state => {
+  return {
+    err: state.error
+  }
+}
+
+export default connect(
+  mapStateToProps
+)(Error)

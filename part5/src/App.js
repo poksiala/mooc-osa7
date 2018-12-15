@@ -4,10 +4,12 @@ import blogService from './services/blogs'
 import loginService from './services/login'
 import Notification from './components/notification'
 import Error from './components/error'
-import {Togglable} from './components/Togglable'
+import { Togglable } from './components/Togglable'
 import LoginForm from './components/LoginForm'
 import BlogForm from './components/BlogForm'
-
+import { notify } from './reducers/notifications'
+import { showError } from './reducers/errors'
+import { connect } from 'react-redux'
 
 class App extends React.Component {
   constructor(props) {
@@ -16,13 +18,11 @@ class App extends React.Component {
       blogs: [],
       name: null,
       user: null,
-      username: "",
-      password: "",
-      title: "",
-      author: "",
-      url: "",
-      notification: null,
-      error: null,
+      username: '',
+      password: '',
+      title: '',
+      author: '',
+      url: '',
     }
   }
 
@@ -58,34 +58,34 @@ class App extends React.Component {
       window.localStorage.setItem('blogsUser', JSON.stringify(user))
 
       blogService.setToken(user.token)
-      this.setState({ 
-        username: '', 
-        password: '', 
+      this.setState({
+        username: '',
+        password: '',
         user
       })
-      this.setNotification('Succesfull login')
+      this.props.notify('Succesfull login', 3)
 
-      
+
     } catch(exception) {
       this.setState({
         username: '',
         password: ''
       })
-      this.setError('Invalid username or password')
+      this.props.showError('Invalid username or password', 3)
       console.log(exception)
     }
   }
 
   logout = () => {
-    this.setState({user: null})
+    this.setState({ user: null })
     window.localStorage.removeItem('blogsUser')
-    this.setNotification('Logged out')
+    this.props.notify('Logged out', 3)
   }
 
   addBlog = async (event) => {
     event.preventDefault()
     this.blogForm.toggleVisibility()
-    const {title, author, url} = this.state
+    const { title, author, url } = this.state
     try {
       const newBlog = await blogService
         .create({
@@ -100,27 +100,17 @@ class App extends React.Component {
         author: '',
         url: ''
       })
-      this.setNotification(`a new blog '${newBlog.title}' added.`)      
+      this.props.notify(`a new blog '${newBlog.title}' added.`, 3)
     } catch (exception) {
-      this.setError(`Error. See console for details :)`)
+      this.props.setError('Error. See console for details :)', 3)
       console.error(exception)
     }
-  }
-
-  setNotification = (notification) => {
-    this.setState({notification})
-    setTimeout(() => this.setState({notification: null}), 2000)
-  }
-
-  setError = (error) => {
-    this.setState({error})
-    setTimeout(() => this.setState({error: null}), 2000)
   }
 
   addLike = (blog) => {
     return(
       async () => {
-        const {user, likes, author, title, url} = blog
+        const { user, likes, author, title, url } = blog
         const blogData = {
           user: user._id,
           likes: likes + 1,
@@ -132,8 +122,8 @@ class App extends React.Component {
         const blogs = this.state.blogs.map((b) => {
           return (b.id === updatedBlog.id) ? updatedBlog : b
         }).sort(blogSort)
-        this.setState({blogs})
-        this.setNotification('Liked!')
+        this.setState({ blogs })
+        this.props.notify('Liked!', 3)
       }
     )
   }
@@ -145,11 +135,11 @@ class App extends React.Component {
         try {
           await blogService.remove(id)
           const blogs = this.state.blogs.filter(b => b.id !== id)
-          this.setState({blogs})
-          this.setNotification(`blog '${blog.title}' removed.`)
+          this.setState({ blogs })
+          this.props.notify(`blog '${blog.title}' removed.`, 3)
         } catch (exception) {
           console.error(exception)
-          this.setError('Could not remove blogpost')
+          this.props.showError('Could not remove blogpost', 3)
         }
       }
     )
@@ -160,15 +150,15 @@ class App extends React.Component {
     if (this.state.user === null) {
       return (
         <div>
-          <Notification message={this.state.notification} />
-          <Error message={this.state.error} />
+          <Notification />
+          <Error />
           <h2>Log in</h2>
-            <LoginForm
-              username={this.state.username}
-              password={this.state.password}
-              handleChange={this.handleFieldChange}
-              handleSubmit={this.login}
-            />
+          <LoginForm
+            username={this.state.username}
+            password={this.state.password}
+            handleChange={this.handleFieldChange}
+            handleSubmit={this.login}
+          />
         </div>
       )
     }
@@ -176,14 +166,14 @@ class App extends React.Component {
     return (
       <div>
         <h2>blogs</h2>
-        <Notification message={this.state.notification} />
+        <Notification />
         <Error message={this.state.error} />
         <p>
           {this.state.user.name} logged in. <button onClick={this.logout}>logout</button>
         </p>
-        {this.state.blogs.map(blog => 
-          <Blog 
-            key={blog.id} 
+        {this.state.blogs.map(blog =>
+          <Blog
+            key={blog.id}
             blog={blog}
             handleLike={this.addLike}
             handleDelete={this.deleteBlog}
@@ -202,10 +192,13 @@ class App extends React.Component {
           </Togglable>
         </div>
       </div>
-    );
+    )
   }
 }
 
 const blogSort = (a, b) => b.likes - a.likes
 
-export default App;
+export default connect(
+  null,
+  { notify, showError }
+)(App)
